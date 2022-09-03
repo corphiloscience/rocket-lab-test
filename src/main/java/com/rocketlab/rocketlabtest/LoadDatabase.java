@@ -8,6 +8,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +23,11 @@ public class LoadDatabase {
 
     @Bean
     public CommandLineRunner initDataBase(TelemetryRepository telemetryRepository) {
+        if(databaseAlreadyInitialized()){
+            return args -> {
+                LOGGER.info("Database already initialized...");
+            };
+        }
         List<Telemetry> telemetryData = new ArrayList<>();
         telemetryData.add(new Telemetry(OEM_SCRATE_BDYX, LocalDateTime.parse("2022-05-13T18:51:10"), BigDecimal.valueOf(-5.0690708335691E-06),"2200"));
         telemetryData.add(new Telemetry(OEM_SCRATE_BDYX, LocalDateTime.parse("2022-05-13T18:51:20"), BigDecimal.valueOf(-4.89050479960237E-06),"2200"));
@@ -30,5 +36,10 @@ public class LoadDatabase {
                 LOGGER.info("Preloading some data...");
                 telemetryData.forEach(t -> LOGGER.info(telemetryRepository.save(t).toString()));
         };
+    }
+
+    private boolean databaseAlreadyInitialized() {
+        File databaseFile = new File("./db/demo.mv.db");
+        return databaseFile.exists();
     }
 }

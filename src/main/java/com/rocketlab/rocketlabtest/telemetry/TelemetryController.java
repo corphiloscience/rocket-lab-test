@@ -1,8 +1,14 @@
 package com.rocketlab.rocketlabtest.telemetry;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/telemetry")
@@ -25,13 +31,23 @@ public class TelemetryController {
     }
 
     @GetMapping
-    public List<Telemetry> all() {
-        return telemetryRepository.findAll();
+    public CollectionModel<EntityModel<Telemetry>> all() {
+        List<EntityModel<Telemetry>> telemetries = telemetryRepository.findAll().stream()
+                .map(telemetry -> EntityModel.of(telemetry,
+                        linkTo(methodOn(TelemetryController.class).byId(telemetry.getId())).withSelfRel(),
+                        linkTo(methodOn(TelemetryController.class).all()).withRel("telemetry")))
+                .toList();
+        return CollectionModel.of(telemetries,
+                linkTo(methodOn(TelemetryController.class).all()).withSelfRel());
     }
 
     @GetMapping("/{id}")
-    public Telemetry byId(@PathVariable Long id) {
-        return telemetryRepository.findById(id).orElseThrow(() -> new TelemetryNotFoundException(id));
+    public EntityModel<Telemetry> byId(@PathVariable Long id) {
+        Telemetry telemetry = telemetryRepository.findById(id)
+                .orElseThrow(() -> new TelemetryNotFoundException(id));
+        return EntityModel.of(telemetry,
+                linkTo(methodOn(TelemetryController.class).byId(id)).withSelfRel(),
+                linkTo(methodOn(TelemetryController.class).all()).withRel("telemetry"));
     }
 
     @PutMapping("/{id}")
