@@ -16,18 +16,20 @@ public class Telemetry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     private Measurement measurement;
 
     private LocalDateTime time;
 
+    @Column(columnDefinition = "NUMERIC(19, 19)")
     private BigDecimal position;
 
-    private String appId;
+    private String craftId;
 
-    public Telemetry(Measurement measurement, LocalDateTime time, BigDecimal position, String appId) {
+    public Telemetry(Measurement measurement, LocalDateTime time, BigDecimal position, String craftId) {
         this.measurement = measurement;
         this.time = time;
         this.position = position;
-        this.appId = appId;
+        this.craftId = craftId;
     }
 }
