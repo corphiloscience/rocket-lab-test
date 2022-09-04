@@ -14,8 +14,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -68,11 +72,11 @@ public class TelemetryControllerTest {
     @Test
     void createTelemetry_success() throws Exception {
         Telemetry telemetry = Telemetry.builder()
-                .id(1L)
+                .id(5L)
                 .measurement(Measurement.OEM_SCRATE_BDYX)
                 .craftId("2200")
                 .time(LocalDateTime.now())
-                .position(BigDecimal.valueOf(0.001))
+                .position(BigDecimal.valueOf(0.05))
                 .build();
 
         EntityModel<Telemetry> telemetryModel = mockEntityModel(telemetry);
@@ -89,8 +93,73 @@ public class TelemetryControllerTest {
                 .andExpect(status().is2xxSuccessful())
                 .andDo(print())
                 .andExpect(jsonPath("$", notNullValue()))
-                .andExpect(jsonPath("$.position", is(0.001)));
+                .andExpect(jsonPath("$.position", is(0.05)));
     }
+
+    @Test
+    void getTelemetryById_success() throws Exception {
+        when(telemetryRepository.findById(eq(TELEMETRY_1.getId()))).thenReturn(Optional.of(TELEMETRY_1));
+        when(mockAssembler.toModel(eq(TELEMETRY_1))).thenReturn(TELEMETRY_MODEL_1);
+
+        mockMvc.perform(MockMvcRequestBuilders
+                .get("/telemetry/1")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(jsonPath("$", notNullValue()))
+                .andExpect(jsonPath("$.position", is(0.01)))
+                .andExpect(jsonPath("$._links.self.href", is("/telemetry/1")));
+    }
+
+    @Test
+    void getTelemetryById_notFound() throws Exception {
+        when(telemetryRepository.findById(eq(TELEMETRY_1.getId()))).thenReturn(Optional.empty());
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/telemetry/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andDo(print())
+                .andExpect(result -> assertTrue(result.getResolvedException() instanceof TelemetryNotFoundException))
+                .andExpect(result -> assertEquals("Could not find telemetry for 1", Objects.requireNonNull(result.getResolvedException()).getMessage()));
+    }
+
+    @Test
+    public void updateTelemetry_success() throws Exception {
+        Telemetry updatedTelemetry = Telemetry.builder()
+                .id(3L)
+                .measurement(Measurement.OEM_SCRATE_BDYX)
+                .craftId("2200")
+                .time(LocalDateTime.now())
+                .position(BigDecimal.valueOf(0.03))
+                .build();
+
+        when(telemetryRepository.findById(eq(TELEMETRY_3.getId()))).thenReturn(Optional.of(TELEMETRY_3));
+        when(telemetryRepository.save(eq(updatedTelemetry))).thenReturn(updatedTelemetry);
+        when(mockAssembler.toModel(updatedTelemetry)).thenReturn(mockEntityModel(updatedTelemetry));
+
+        MockHttpServletRequestBuilder mockRequest = MockMvcRequestBuilders.put("/telemetry/3")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(this.mapper.writeValueAsString(updatedTelemetry));
+
+        mockMvc.perform(mockRequest)
+                .andExpect(status().is2xxSuccessful())
+                .andDo(print())
+                .andExpect(jsonPath("$", notNullValue()))
+                .andExpect(jsonPath("$.position", is(0.03)));
+    }
+
+    @Test
+    public void deletePatientById_success() throws Exception {
+        when(telemetryRepository.findById(TELEMETRY_2.getId())).thenReturn(Optional.of(TELEMETRY_2));
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .delete("/telemetry/2")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().is2xxSuccessful());
+    }
+
 
     private static EntityModel<Telemetry> mockEntityModel(Telemetry telemetry) {
         return EntityModel.of(telemetry,
