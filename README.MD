@@ -1,4 +1,4 @@
-# Prequisites for running
+# Prerequisites for running
 - Java SDK 18
 - Gradle or an IDE
 

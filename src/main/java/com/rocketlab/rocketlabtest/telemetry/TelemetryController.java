@@ -33,8 +33,15 @@ public class TelemetryController {
     }
 
     @PostMapping("/bulk")
-    public List<Telemetry> newBulkTelemetry(@RequestBody List<Telemetry> telemetries) {
-        return repository.saveAll(telemetries);
+    public ResponseEntity<CollectionModel<EntityModel<Telemetry>>> newBulkTelemetry(@RequestBody List<Telemetry> telemetries) {
+        List<EntityModel<Telemetry>> telemetryModels = repository.saveAll(telemetries).stream()
+                .map(assembler::toModel)
+                .toList();
+        CollectionModel<EntityModel<Telemetry>> collectionModel = CollectionModel.of(telemetryModels,
+                linkTo(methodOn(TelemetryController.class).newBulkTelemetry(telemetries)).withSelfRel());
+        return ResponseEntity
+                .created(collectionModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
+                .body(collectionModel);
     }
 
     @GetMapping
@@ -54,8 +61,8 @@ public class TelemetryController {
     }
 
     @PutMapping("/{id}")
-    public Telemetry replaceTelemetry(@RequestBody Telemetry telemetry, @PathVariable Long id) {
-        return repository.findById(id)
+    public ResponseEntity<EntityModel<Telemetry>> replaceTelemetry(@RequestBody Telemetry telemetry, @PathVariable Long id) {
+        Telemetry updatedTelemetry = repository.findById(id)
                 .map(tel -> {
                     tel.setMeasurement(telemetry.getMeasurement());
                     tel.setCraftId(telemetry.getCraftId());
@@ -67,6 +74,10 @@ public class TelemetryController {
                     telemetry.setId(id);
                     return repository.save(telemetry);
                 });
+        EntityModel<Telemetry> entityModel = assembler.toModel(updatedTelemetry);
+
+        return ResponseEntity.created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
+                .body(entityModel);
     }
 
     @DeleteMapping("/{id}")

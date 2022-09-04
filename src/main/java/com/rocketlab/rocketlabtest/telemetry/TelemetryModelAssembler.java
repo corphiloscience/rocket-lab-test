@@ -12,9 +12,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class TelemetryModelAssembler implements RepresentationModelAssembler<Telemetry, EntityModel<Telemetry>> {
     @Override
     public EntityModel<Telemetry> toModel(Telemetry telemetry) {
-        return EntityModel.of(telemetry, //
+        return EntityModel.of(telemetry,
                 linkTo(methodOn(TelemetryController.class).byId(telemetry.getId())).withSelfRel(),
-                linkTo(methodOn(TelemetryController.class).all()).withRel("employees"));
+                linkTo(methodOn(TelemetryController.class).all()).withRel("telemetry"));
     }
 
     @Override

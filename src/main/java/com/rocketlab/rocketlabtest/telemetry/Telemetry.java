@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @Table(name = "telemetry")
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Telemetry {
 
     @Id
